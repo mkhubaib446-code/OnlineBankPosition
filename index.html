@@ -101,37 +101,47 @@ th{background:#f1f5f9}
 
 </div>
 
-<script>
+<script type="module">
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+
+import {
+getFirestore,
+collection,
+addDoc,
+getDocs,
+deleteDoc,
+updateDoc,
+doc
+} from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+
+const firebaseConfig = {
+apiKey: "AIzaSyDb4VHDQ_3mDqrX1oNIfC7hzK18O6znQLE",
+authDomain: "bank-application-5c3e1.firebaseapp.com",
+projectId: "bank-application-5c3e1",
+storageBucket: "bank-application-5c3e1.firebasestorage.app",
+messagingSenderId: "540292068600",
+appId: "1:540292068600:web:8384df0a6fc4b36d12370d",
+measurementId: "G-H8QJGXPWJT"
+};
+
+const app = initializeApp(firebaseConfig);
+
+const db = getFirestore(app);
 
 let projects = [];
 
-function saveData(){
-localStorage.setItem("projectsData", JSON.stringify(projects));
-}
+window.createProject = async function(){
 
-function loadData(){
-const data = localStorage.getItem("projectsData");
-if(data){
-projects = JSON.parse(data);
-}
-}
-
-function clearData(){
-if(confirm("Delete all saved data?")){
-localStorage.removeItem("projectsData");
-projects = [];
-renderAll();
-}
-}
-
-function createProject(){
 const projectName = document.getElementById("project-name").value;
+
 const bankName = document.getElementById("bank-name").value;
+
 const openingBalance = Number(document.getElementById("opening-balance").value);
 
 if(!projectName || !bankName) return;
 
-projects.push({
+await addDoc(collection(db,"projects"),{
 projectName,
 bankName,
 openingBalance,
@@ -140,31 +150,79 @@ payments:[],
 adjustments:[]
 });
 
-saveData();
-
+loadProjects();
 
 document.getElementById("project-name").value = "";
 document.getElementById("bank-name").value = "";
 document.getElementById("opening-balance").value = "";
 
+};
+
+async function loadProjects(){
+
+projects = [];
+
+const querySnapshot = await getDocs(collection(db,"projects"));
+
+querySnapshot.forEach((projectDoc)=>{
+
+projects.push({
+id:projectDoc.id,
+...projectDoc.data()
+});
+
+});
+
 renderAll();
+
 }
 
-function updateProjectDropdown(){
-const select = document.getElementById("voucher-project");
+window.deleteProject = async function(id){
 
-select.innerHTML = projects.map((p,i)=>
-`<option value="${i}">${p.projectName} - ${p.bankName}</option>`
-).join("");
-}
+if(!confirm("Delete this project?")) return;
 
-function addVoucher(){
+await deleteDoc(doc(db,"projects",id));
+
+loadProjects();
+
+};
+
+window.editProject = async function(id){
+
+const project = projects.find(p=>p.id === id);
+
+const newProjectName = prompt("Edit Project Name", project.projectName);
+
+const newBankName = prompt("Edit Bank Name", project.bankName);
+
+const newOpeningBalance = prompt("Edit Opening Balance", project.openingBalance);
+
+if(!newProjectName || !newBankName) return;
+
+await updateDoc(doc(db,"projects",id),{
+projectName:newProjectName,
+bankName:newBankName,
+openingBalance:Number(newOpeningBalance)
+});
+
+loadProjects();
+
+};
+
+window.addVoucher = async function(){
+
 const projectIndex = document.getElementById("voucher-project").value;
+
 const type = document.getElementById("voucher-type").value;
+
 const date = document.getElementById("voucher-date").value;
+
 const narration = document.getElementById("voucher-narration").value || "Voucher Entry";
+
 const chequeNo = document.getElementById("voucher-cheque-no").value;
+
 const chequeDate = document.getElementById("voucher-cheque-date").value;
+
 const amount = Number(document.getElementById("voucher-amount").value);
 
 if(projectIndex === "" || !date || !amount) return;
@@ -193,25 +251,35 @@ if(type === "adjustment"){
 project.adjustments.push(voucher);
 }
 
-saveData();
+await updateDoc(doc(db,"projects",project.id),{
+receipts:project.receipts,
+payments:project.payments,
+adjustments:project.adjustments
+});
 
+loadProjects();
 
-document.getElementById("voucher-date").value = "";
-document.getElementById("voucher-narration").value = "";
-document.getElementById("voucher-cheque-no").value = "";
-document.getElementById("voucher-cheque-date").value = "";
-document.getElementById("voucher-amount").value = "";
+};
 
-renderAll();
+function updateProjectDropdown(){
+
+const select = document.getElementById("voucher-project");
+
+select.innerHTML = projects.map((p,i)=>
+`<option value="${i}">${p.projectName} - ${p.bankName}</option>`
+).join("");
+
 }
 
 function getTotals(){
+
 let opening = 0;
 let receipts = 0;
 let payments = 0;
 let adjustments = 0;
 
 projects.forEach(project=>{
+
 opening += Number(project.openingBalance);
 
 receipts += project.receipts.reduce((a,b)=>a + Number(b.amount),0);
@@ -219,14 +287,17 @@ receipts += project.receipts.reduce((a,b)=>a + Number(b.amount),0);
 payments += project.payments.reduce((a,b)=>a + Number(b.amount),0);
 
 adjustments += project.adjustments.reduce((a,b)=>a + Number(b.amount),0);
+
 });
 
 const balance = opening + receipts + adjustments - payments;
 
 return {opening, receipts, payments, adjustments, balance};
+
 }
 
 function renderDashboard(){
+
 const totals = getTotals();
 
 const items = [
@@ -238,20 +309,23 @@ const items = [
 ["Current Balance", totals.balance]
 ];
 
-
 document.getElementById("dashboard-summary").innerHTML = items.map(item=>`
 <div class="card">
 <div class="label">${item[0]}</div>
 <div class="metric">${Number(item[1]).toLocaleString()}</div>
 </div>
 `).join("");
+
 }
 
 function renderProjects(){
+
 const rows = projects.map((p,index)=>{
 
 const receipts = p.receipts.reduce((a,b)=>a + Number(b.amount),0);
+
 const payments = p.payments.reduce((a,b)=>a + Number(b.amount),0);
+
 const adjustments = p.adjustments.reduce((a,b)=>a + Number(b.amount),0);
 
 const balance = Number(p.openingBalance) + receipts + adjustments - payments;
@@ -266,13 +340,12 @@ return `
 <td>${payments.toLocaleString()}</td>
 <td>${adjustments.toLocaleString()}</td>
 <td>${balance.toLocaleString()}</td>
-<td><button onclick="editProject(${index})">Edit</button></td>
-<td><button onclick="deleteProject(${index})">Delete</button></td>
+<td><button onclick="editProject('${p.id}')">Edit</button></td>
+<td><button onclick="deleteProject('${p.id}')">Delete</button></td>
 </tr>
 `;
 
 }).join("");
-
 
 document.getElementById("projects-table").innerHTML = `
 <thead>
@@ -293,19 +366,21 @@ document.getElementById("projects-table").innerHTML = `
 ${rows}
 </tbody>
 `;
+
 }
 
 function renderVouchers(){
+
 let rows = "";
 
 projects.forEach(project=>{
 
-project.receipts.forEach(v=>{
+[...project.receipts,...project.payments,...project.adjustments].forEach(v=>{
+
 rows += `
 <tr>
 <td>${project.projectName}</td>
 <td>${project.bankName}</td>
-<td>Receipt</td>
 <td>${v.voucherNo}</td>
 <td>${v.date}</td>
 <td>${v.narration}</td>
@@ -313,47 +388,16 @@ rows += `
 <td>${v.status}</td>
 </tr>
 `;
-});
-
-project.payments.forEach(v=>{
-rows += `
-<tr>
-<td>${project.projectName}</td>
-<td>${project.bankName}</td>
-<td>Payment</td>
-<td>${v.voucherNo}</td>
-<td>${v.date}</td>
-<td>${v.narration}</td>
-<td>${v.amount.toLocaleString()}</td>
-<td>${v.status}</td>
-</tr>
-`;
-});
-
-project.adjustments.forEach(v=>{
-rows += `
-<tr>
-<td>${project.projectName}</td>
-<td>${project.bankName}</td>
-<td>Adjustment</td>
-<td>${v.voucherNo}</td>
-<td>${v.date}</td>
-<td>${v.narration}</td>
-<td>${v.amount.toLocaleString()}</td>
-<td>${v.status}</td>
-</tr>
-`;
-});
 
 });
 
+});
 
 document.getElementById("voucher-table").innerHTML = `
 <thead>
 <tr>
 <th>Project</th>
 <th>Bank</th>
-<th>Type</th>
 <th>Voucher No</th>
 <th>Date</th>
 <th>Narration</th>
@@ -365,52 +409,23 @@ document.getElementById("voucher-table").innerHTML = `
 ${rows}
 </tbody>
 `;
+
 }
-
-window.deleteProject = function(index){
-
-if(!confirm("Delete this project?")) return;
-
-projects.splice(index,1);
-
-saveData();
-
-renderAll();
-
-};
-
-window.editProject = function(index){
-
-const project = projects[index];
-
-const newProjectName = prompt("Edit Project Name", project.projectName);
-const newBankName = prompt("Edit Bank Name", project.bankName);
-const newOpeningBalance = prompt("Edit Opening Balance", project.openingBalance);
-
-if(!newProjectName || !newBankName) return;
-
-project.projectName = newProjectName;
-project.bankName = newBankName;
-project.openingBalance = Number(newOpeningBalance);
-
-saveData();
-
-renderAll();
-
-};
 
 function renderAll(){
+
 updateProjectDropdown();
+
 renderDashboard();
+
 renderProjects();
+
 renderVouchers();
-saveData();
+
 }
 
-loadData();
-renderAll();
+loadProjects();
 
 </script>
-
 </body>
 </html>
