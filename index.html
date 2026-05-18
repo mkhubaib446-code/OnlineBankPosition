@@ -1,253 +1,471 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bank Management</title>
+<title>Project Bank Position</title>
 <style>
 *{box-sizing:border-box}
 body{margin:0;font-family:Arial,sans-serif;background:#f8fafc;color:#0f172a}
-.container{max-width:1200px;margin:0 auto;padding:24px;display:grid;gap:20px}
-.card{background:#fff;border-radius:16px;padding:20px;box-shadow:0 4px 14px rgba(0,0,0,.06)}
-h1{margin:0 0 8px;font-size:30px}
-h2{margin:0 0 16px;font-size:20px}
-p{margin:0;color:#64748b}
+.container{max-width:1400px;margin:auto;padding:20px;display:grid;gap:20px}
+.card{background:white;padding:20px;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.08)}
+h1,h2{margin-top:0}
 .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
-input,select,button{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:10px;font-size:14px}
-button{background:#0f172a;color:white;border:none;cursor:pointer}
-table{width:100%;border-collapse:collapse;font-size:14px}
-th,td{padding:12px;text-align:left;border-bottom:1px solid #e2e8f0}
+input,select,button{
+width:100%;
+padding:12px;
+border:1px solid #cbd5e1;
+border-radius:10px;
+font-size:14px
+}
+button{
+background:#0f172a;
+color:white;
+border:none;
+cursor:pointer
+}
+button:hover{
+opacity:.9
+}
+table{
+width:100%;
+border-collapse:collapse;
+margin-top:10px
+}
+th,td{
+padding:12px;
+border-bottom:1px solid #e2e8f0;
+text-align:left;
+font-size:14px
+}
 th{background:#f1f5f9}
-.metric{font-size:26px;font-weight:700}
-.label{font-size:13px;color:#64748b}
+.metric{font-size:26px;font-weight:bold}
+.label{color:#64748b;font-size:13px}
 </style>
 </head>
 <body>
+
 <div class="container">
-  <div>
-    <h1>Bank Summary & Vouchers</h1>
-    <p>Functional bank position with live summary updates</p>
-  </div>
 
-  <div class="card">
-    <h2>Summary</h2>
-    <div class="grid" id="summary-cards"></div>
-    <div style="margin-top:20px">
-      <h2>Bank Wise Position</h2>
-      <table id="bank-summary-table"></table>
-    </div>
-  </div>
+<div>
+<h1>Project Bank Position System</h1>
+<p>Manage projects, bank balances and vouchers</p>
+</div>
 
-  <div class="card">
-    <h2>Create Voucher</h2>
-    <div class="grid">
-      <select id="voucher-type">
-        <option value="receipt">Bank Receipt Voucher</option>
-        <option value="payment">Bank Payment Voucher</option>
-        <option value="adjustment">Bank Adjustment Voucher</option>
-      </select>
-      <input id="voucher-date" type="date">
-      <input id="voucher-bank" placeholder="Bank name">
-      <input id="voucher-narration" placeholder="Narration">
-      <input id="voucher-cheque-no" placeholder="Cheque No">
-      <input id="voucher-cheque-date" type="date">
-      <input id="voucher-amount" type="number" placeholder="Amount">
-      <button onclick="addVoucher()">Add Voucher</button>
-      <button onclick="clearAllData()">Clear All Data</button>
-    </div>
-  </div>
+<div class="card">
+<h2>Create Project</h2>
+<div class="grid">
+<input id="project-name" placeholder="Project Name">
+<input id="bank-name" placeholder="Project Bank Name">
+<input id="opening-balance" type="number" placeholder="Opening Balance">
+<button onclick="createProject()">Create Project</button>
+</div>
+</div>
 
-  <div class="card"><h2>Bank Receipt Voucher</h2><div id="receipt-summary" style="margin-bottom:12px;color:#475569;font-size:14px"></div><table id="receipt-table"></table></div>
-  <div class="card"><h2>Bank Payment Voucher</h2><div id="payment-summary" style="margin-bottom:12px;color:#475569;font-size:14px"></div><table id="payment-table"></table></div>
-  <div class="card"><h2>Bank Adjustment Voucher</h2><div id="adjustment-summary" style="margin-bottom:12px;color:#475569;font-size:14px"></div><table id="adjustment-table"></table></div>
+<div class="card">
+<h2>Dashboard Summary</h2>
+<div class="grid" id="dashboard-summary"></div>
+</div>
+
+<div class="card">
+<h2>Projects Bank Position</h2>
+<table id="projects-table"></table>
+</div>
+
+<div class="card">
+<h2>Create Voucher</h2>
+<div class="grid">
+<select id="voucher-project"></select>
+
+<select id="voucher-type">
+<option value="receipt">Receipt Voucher</option>
+<option value="payment">Payment Voucher</option>
+<option value="adjustment">Adjustment Voucher</option>
+</select>
+
+<input id="voucher-date" type="date">
+<input id="voucher-narration" placeholder="Narration">
+<input id="voucher-cheque-no" placeholder="Cheque No">
+<input id="voucher-cheque-date" type="date">
+<input id="voucher-amount" type="number" placeholder="Amount">
+
+<button onclick="addVoucher()">Add Voucher</button>
+<button onclick="clearData()">Clear All Data</button>
+</div>
+</div>
+
+<div class="card">
+<h2>All Vouchers</h2>
+<table id="voucher-table"></table>
+<table id="projects-table"></table>
+</div>
+
 </div>
 
 <script>
-const openingBalance = 0;
+
+let projects = [];
 
 function saveData(){
-  localStorage.setItem("bankAppData", JSON.stringify({
-    receiptVoucher: receiptVoucher.rows,
-    paymentVoucher: paymentVoucher.rows,
-    adjustmentVoucher: adjustmentVoucher.rows
-  }));
+localStorage.setItem("projectsData", JSON.stringify(projects));
 }
 
 function loadData(){
-  const saved = localStorage.getItem("bankAppData");
-  if(!saved) return;
-  const data = JSON.parse(saved);
-  receiptVoucher.rows = data.receiptVoucher || [];
-  paymentVoucher.rows = data.paymentVoucher || [];
-  adjustmentVoucher.rows = data.adjustmentVoucher || [];
+const data = localStorage.getItem("projectsData");
+if(data){
+projects = JSON.parse(data);
+}
 }
 
-function clearAllData(){
-  if(confirm("Remove all saved data?")){
-    localStorage.removeItem("bankAppData");
-    receiptVoucher.rows = [];
-    paymentVoucher.rows = [];
-    adjustmentVoucher.rows = [];
-    loadData();
+function clearData(){
+if(confirm("Delete all saved data?")){
+localStorage.removeItem("projectsData");
+projects = [];
 renderAll();
-  }
+}
 }
 
-const receiptVoucher = {
-  headers:["Voucher No","Date","Narration","Bank","Amount"],
-  rows:[]
-};
-const paymentVoucher = {
-  headers:["Voucher No","Date","Narration","Bank","Cheque No","Cheque Presenting Date","Amount","Status","Cleared Date"],
-  rows:[]
-};
-const adjustmentVoucher = {
-  headers:["Voucher No","Date","Narration","Bank","Amount"],
-  rows:[]
-};
+function createProject(){
+const projectName = document.getElementById("project-name").value;
+const bankName = document.getElementById("bank-name").value;
+const openingBalance = Number(document.getElementById("opening-balance").value);
 
-function amountOf(rows, index){
-  return rows.reduce((a,r)=>a + Number(r[index]), 0);
+if(!projectName || !bankName) return;
+
+projects.push({
+projectName,
+bankName,
+openingBalance,
+receipts:[],
+payments:[],
+adjustments:[]
+});
+
+saveData();
+
+
+document.getElementById("project-name").value = "";
+document.getElementById("bank-name").value = "";
+document.getElementById("opening-balance").value = "";
+
+renderAll();
 }
 
-function getBankSummary(){
-  const banks = {};
+function updateProjectDropdown(){
+const select = document.getElementById("voucher-project");
 
-  function ensureBank(name){
-    if(!banks[name]){
-      banks[name] = {
-        opening: openingBalance,
-        receipt: 0,
-        adjustment: 0,
-        payment: 0
-      };
-    }
-  }
-
-  receiptVoucher.rows.forEach(r=>{
-    ensureBank(r[3]);
-    banks[r[3]].receipt += Number(r[4]);
-  });
-
-  paymentVoucher.rows.forEach(r=>{
-    ensureBank(r[3]);
-    if(r[7] === "Cleared") {
-      banks[r[3]].payment += Number(r[6]);
-    }
-  });
-
-  adjustmentVoucher.rows.forEach(r=>{
-    ensureBank(r[3]);
-    banks[r[3]].adjustment += Number(r[4]);
-  });
-
-  return banks;
-}
-
-function renderSummary(){
-  const debit = amountOf(receiptVoucher.rows,4);
-  const bankPayments = paymentVoucher.rows.reduce((a,r)=> a + (r[7] === "Cleared" ? Number(r[6]) : 0), 0);
-  const credit = amountOf(adjustmentVoucher.rows,4);
-  const balance = openingBalance + debit - bankPayments + credit;
-
-  const items = [
-    ["Opening Balance", openingBalance],
-    ["Debit", debit],
-    ["Credit", credit],
-    ["Bank Payments", bankPayments],
-    ["Current Balance", balance]
-  ];
-
-  document.getElementById("summary-cards").innerHTML = items.map(i =>
-    `<div class="card"><div class="label">${i[0]}</div><div class="metric">${Number(i[1]).toLocaleString()}</div></div>`
-  ).join("");
-
-  const banks = getBankSummary();
-  const rows = Object.entries(banks).map(([name,data])=>{
-    const closing = data.opening + data.receipt + data.adjustment - data.payment;
-    return `<tr>
-      <td>${name}</td>
-      <td>${data.opening.toLocaleString()}</td>
-      <td>${data.receipt.toLocaleString()}</td>
-      <td>${data.adjustment.toLocaleString()}</td>
-      <td>${data.payment.toLocaleString()}</td>
-      <td>${closing.toLocaleString()}</td>
-      <td>${data.payment.toLocaleString()}</td>
-    </tr>`;
-  }).join("");
-
-  document.getElementById("bank-summary-table").innerHTML = `
-    <thead>
-      <tr>
-        <th>Bank</th>
-        <th>Opening Balance</th>
-        <th>Receipts</th>
-        <th>Adjustments</th>
-        <th>Payments</th>
-        <th>Closing Balance</th>
-        <th>Payments Cleared Today</th>
-      </tr>
-    </thead>
-    <tbody>${rows}</tbody>`;
-}
-
-function renderTable(id, data){
-  const table = document.getElementById(id);
-  table.innerHTML = `
-    <thead><tr>${data.headers.map(h=>`<th>${h}</th>`).join("")}${id === "payment-table" ? "<th>Action</th>" : ""}</tr></thead>
-    <tbody>
-      ${data.rows.map((r,index)=>`<tr>${r.map(c=>`<td>${typeof c === 'number' ? c.toLocaleString() : c}</td>`).join("")}${id === "payment-table" ? `<td>${r[7] === "Pending" ? `<button onclick="clearCheque(${index})">Clear</button>` : ""}</td>` : ""}</tr>`).join("")}
-    </tbody>`;
-}
-
-function clearCheque(index){
-  if(paymentVoucher.rows[index] && paymentVoucher.rows[index][7] === "Pending"){
-    paymentVoucher.rows[index][7] = "Cleared";
-    paymentVoucher.rows[index][8] = new Date().toISOString().split('T')[0];
-    renderAll();
-  }
+select.innerHTML = projects.map((p,i)=>
+`<option value="${i}">${p.projectName} - ${p.bankName}</option>`
+).join("");
 }
 
 function addVoucher(){
-  const type = document.getElementById("voucher-type").value;
-  const date = document.getElementById("voucher-date").value;
-  const bank = document.getElementById("voucher-bank").value;
-  const narration = document.getElementById("voucher-narration").value || "Entry";
-  const chequeNo = document.getElementById("voucher-cheque-no").value;
-  const chequeDate = document.getElementById("voucher-cheque-date").value;
-  const amount = Number(document.getElementById("voucher-amount").value);
+const projectIndex = document.getElementById("voucher-project").value;
+const type = document.getElementById("voucher-type").value;
+const date = document.getElementById("voucher-date").value;
+const narration = document.getElementById("voucher-narration").value || "Voucher Entry";
+const chequeNo = document.getElementById("voucher-cheque-no").value;
+const chequeDate = document.getElementById("voucher-cheque-date").value;
+const amount = Number(document.getElementById("voucher-amount").value);
 
-  if(!date || !bank || !amount) return;
+if(projectIndex === "" || !date || !amount) return;
 
-  let target;
-  let prefix;
+const project = projects[projectIndex];
 
-  if(type === "receipt") { target = receiptVoucher; prefix = "BRV"; }
-  if(type === "payment") { target = paymentVoucher; prefix = "BPV"; }
-  if(type === "adjustment") { target = adjustmentVoucher; prefix = "BAV"; }
+const voucher = {
+voucherNo: `${type.toUpperCase()}-${Date.now()}`,
+date,
+narration,
+chequeNo,
+chequeDate,
+amount,
+status: type === "payment" ? "Pending" : "Approved"
+};
 
-  const voucherNo = `${prefix}-${String(target.rows.length + 1).padStart(3,"0")}`;
-  target.rows.push(type === "payment" ? [voucherNo, date, narration, bank, chequeNo, chequeDate, amount, "Pending", ""] : [voucherNo, date, narration, bank, amount]);
+if(type === "receipt"){
+project.receipts.push(voucher);
+}
 
-  document.getElementById("voucher-date").value = "";
-  document.getElementById("voucher-bank").value = "";
-  document.getElementById("voucher-narration").value = "";
-  document.getElementById("voucher-cheque-no").value = "";
-  document.getElementById("voucher-cheque-date").value = "";
-  document.getElementById("voucher-amount").value = "";
+if(type === "payment"){
+project.payments.push(voucher);
+}
 
-  renderAll();
+if(type === "adjustment"){
+project.adjustments.push(voucher);
+}
+
+saveData();
+
+
+document.getElementById("voucher-date").value = "";
+document.getElementById("voucher-narration").value = "";
+document.getElementById("voucher-cheque-no").value = "";
+document.getElementById("voucher-cheque-date").value = "";
+document.getElementById("voucher-amount").value = "";
+
+renderAll();
+}
+
+function getTotals(){
+let opening = 0;
+let receipts = 0;
+let payments = 0;
+let adjustments = 0;
+
+projects.forEach(project=>{
+opening += Number(project.openingBalance);
+
+receipts += project.receipts.reduce((a,b)=>a + Number(b.amount),0);
+
+payments += project.payments.reduce((a,b)=>a + Number(b.amount),0);
+
+adjustments += project.adjustments.reduce((a,b)=>a + Number(b.amount),0);
+});
+
+const balance = opening + receipts + adjustments - payments;
+
+return {opening, receipts, payments, adjustments, balance};
+}
+
+function renderDashboard(){
+const totals = getTotals();
+
+const items = [
+["Projects", projects.length],
+["Opening Balance", totals.opening],
+["Receipts", totals.receipts],
+["Payments", totals.payments],
+["Adjustments", totals.adjustments],
+["Current Balance", totals.balance]
+];
+
+
+document.getElementById("dashboard-summary").innerHTML = items.map(item=>`
+<div class="card">
+<div class="label">${item[0]}</div>
+<div class="metric">${Number(item[1]).toLocaleString()}</div>
+</div>
+`).join("");
+}
+
+function renderProjects(){
+const rows = projects.map((p,index)=>{
+
+const receipts = p.receipts.reduce((a,b)=>a + Number(b.amount),0);
+const payments = p.payments.reduce((a,b)=>a + Number(b.amount),0);
+const adjustments = p.adjustments.reduce((a,b)=>a + Number(b.amount),0);
+
+const balance = Number(p.openingBalance) + receipts + adjustments - payments;
+
+return `
+<tr>
+<td>${index + 1}</td>
+<td>${p.projectName}</td>
+<td>${p.bankName}</td>
+<td>${Number(p.openingBalance).toLocaleString()}</td>
+<td>${receipts.toLocaleString()}</td>
+<td>${payments.toLocaleString()}</td>
+<td>${adjustments.toLocaleString()}</td>
+<td>${balance.toLocaleString()}</td>
+</tr>
+`;
+
+}).join("");
+
+
+document.getElementById("projects-table").innerHTML = `
+<thead>
+<tr>
+<th>#</th>
+<th>Project</th>
+<th>Bank</th>
+<th>Opening</th>
+<th>Receipts</th>
+<th>Payments</th>
+<th>Adjustments</th>
+<th>Balance</th>
+</tr>
+</thead>
+<tbody>
+${rows}
+</tbody>
+`;
+}
+
+function renderVouchers(){
+let rows = "";
+
+projects.forEach(project=>{
+
+project.receipts.forEach(v=>{
+rows += `
+<tr>
+<td>${project.projectName}</td>
+<td>${project.bankName}</td>
+<td>Receipt</td>
+<td>${v.voucherNo}</td>
+<td>${v.date}</td>
+<td>${v.narration}</td>
+<td>${v.amount.toLocaleString()}</td>
+<td>${v.status}</td>
+</tr>
+`;
+});
+
+project.payments.forEach(v=>{
+rows += `
+<tr>
+<td>${project.projectName}</td>
+<td>${project.bankName}</td>
+<td>Payment</td>
+<td>${v.voucherNo}</td>
+<td>${v.date}</td>
+<td>${v.narration}</td>
+<td>${v.amount.toLocaleString()}</td>
+<td>${v.status}</td>
+</tr>
+`;
+});
+
+project.adjustments.forEach(v=>{
+rows += `
+<tr>
+<td>${project.projectName}</td>
+<td>${project.bankName}</td>
+<td>Adjustment</td>
+<td>${v.voucherNo}</td>
+<td>${v.date}</td>
+<td>${v.narration}</td>
+<td>${v.amount.toLocaleString()}</td>
+<td>${v.status}</td>
+</tr>
+`;
+});
+
+});
+
+
+document.getElementById("voucher-table").innerHTML = `
+<thead>
+<tr>
+<th>Project</th>
+<th>Bank</th>
+<th>Type</th>
+<th>Voucher No</th>
+<th>Date</th>
+<th>Narration</th>
+<th>Amount</th>
+<th>Status</th>
+</tr>
+</thead>
+<tbody>
+${rows}
+</tbody>
+`;
 }
 
 function renderAll(){
-  saveData();
-  renderSummary();
-  renderTable("receipt-table", receiptVoucher);
-  renderTable("payment-table", paymentVoucher);
-  renderTable("adjustment-table", adjustmentVoucher);
+updateProjectDropdown();
+renderDashboard();
+renderProjects();
+renderVouchers();
+saveData();
 }
 
+loadData();
 renderAll();
+
 </script>
+
 </body>
 </html>
+
+<script type="module">
+
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+  
+  import {
+  getFirestore,
+  collection,
+  addDoc,
+  getDocs,
+  deleteDocs,
+  doc
+  } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
+  
+  const firebaseConfig = {
+  apiKey: "AIzaSyDb4VHDQ_3mDqrX1oNIfC7hzK18O6znQLE",
+  authDomain: "bank-application-5c3e1.firebaseapp.com",
+  projectId: "bank-application-5c3e1",
+  storageBucket: "bank-application-5c3e1.firebasestorage.app",
+  messagingSenderId: "540292068600",
+  appId: "1:540292068600:web:8384df0a6fc4b36d12370d",
+  measurementId: "G-H8QJGXPWJT"
+  };
+  
+  const app = initializeApp(firebaseConfig);
+  
+  const db = getFirestore(app);
+  
+  window.createProject = async function(){
+  
+  const projectName = document.getElementById("project-name").value;
+  const bankName = document.getElementById("bank-name").value;
+  const openingBalance = Number(document.getElementById("opening-balance").value);
+  
+  if(!projectName || !bankName) return;
+  
+  await addDoc(collection(db,"projects"),{
+  projectName,
+  bankName,
+  openingBalance,
+  createdAt:new Date()
+  });
+  
+  alert("Project Saved");
+  
+  loadProjects();
+  
+  };
+  
+  window.loadProjects = async function(){
+  
+  const table = document.getElementById("projects-table");
+  
+  const querySnapshot = await getDocs(collection(db,"projects"));
+  
+  let rows = "";
+  
+  querySnapshot.forEach((doc)=>{
+  
+  const data = doc.data();
+  
+  rows += `
+  <tr>
+  <td>${data.projectName}</td>
+  <td>${data.bankName}</td>
+  <td>${Number(data.openingBalance).toLocaleString()}</td>
+  </tr>
+  `;
+  
+  });
+  
+  table.innerHTML = `
+  <thead>
+  <tr>
+  <th>Project</th>
+  <th>Bank</th>
+  <th>Opening Balance</th>
+  </tr>
+  </thead>
+  <tbody>
+  ${rows}
+  </tbody>
+  `;
+  
+  };
+  
+  loadProjects();
+  
+  </script>
