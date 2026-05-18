@@ -1,46 +1,94 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Bismillah Group Bank Position</title>
+
 <style>
-*{box-sizing:border-box}
-body{margin:0;font-family:Arial,sans-serif;background:#f8fafc;color:#0f172a}
-.container{max-width:1400px;margin:auto;padding:20px;display:grid;gap:20px}
-.card{background:white;padding:20px;border-radius:16px;box-shadow:0 4px 12px rgba(0,0,0,.08)}
-h1,h2{margin-top:0}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}
+*{
+margin:0;
+padding:0;
+box-sizing:border-box;
+}
+
+body{
+font-family:Arial,sans-serif;
+background:#f8fafc;
+color:#0f172a;
+}
+
+.container{
+max-width:1400px;
+margin:auto;
+padding:20px;
+display:grid;
+gap:20px;
+}
+
+.card{
+background:white;
+padding:20px;
+border-radius:16px;
+box-shadow:0 4px 12px rgba(0,0,0,.08);
+}
+
+.grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:14px;
+}
+
 input,select,button{
 width:100%;
 padding:12px;
 border:1px solid #cbd5e1;
 border-radius:10px;
-font-size:14px
+font-size:14px;
 }
+
 button{
 background:#0f172a;
 color:white;
 border:none;
-cursor:pointer
+cursor:pointer;
 }
+
 button:hover{
-opacity:.9
+opacity:.9;
 }
+
 table{
 width:100%;
 border-collapse:collapse;
-margin-top:10px
+margin-top:10px;
 }
+
 th,td{
 padding:12px;
 border-bottom:1px solid #e2e8f0;
 text-align:left;
-font-size:14px
+font-size:14px;
 }
-th{background:#f1f5f9}
-.metric{font-size:26px;font-weight:bold}
-.label{color:#64748b;font-size:13px}
+
+th{
+background:#f1f5f9;
+}
+
+.metric{
+font-size:24px;
+font-weight:bold;
+}
+
+.label{
+font-size:13px;
+color:#64748b;
+}
+
+h1,h2{
+margin-bottom:10px;
+}
 </style>
 </head>
 <body>
@@ -48,15 +96,16 @@ th{background:#f1f5f9}
 <div class="container">
 
 <div>
-<h1>Project Bank Position System</h1>
-<p>Manage projects, bank balances and vouchers</p>
+<h1>Bismillah Group Bank Position</h1>
+<p>Firebase Cloud Based Bank Position Management System</p>
 </div>
 
 <div class="card">
 <h2>Create Project</h2>
+
 <div class="grid">
 <input id="project-name" placeholder="Project Name">
-<input id="bank-name" placeholder="Project Bank Name">
+<input id="bank-name" placeholder="Bank Name">
 <input id="opening-balance" type="number" placeholder="Opening Balance">
 <button onclick="createProject()">Create Project</button>
 </div>
@@ -68,12 +117,13 @@ th{background:#f1f5f9}
 </div>
 
 <div class="card">
-<h2>Bismillah Group Bank Position</h2>
+<h2>Projects Bank Position</h2>
 <table id="projects-table"></table>
 </div>
 
 <div class="card">
 <h2>Create Voucher</h2>
+
 <div class="grid">
 <select id="voucher-project"></select>
 
@@ -90,7 +140,6 @@ th{background:#f1f5f9}
 <input id="voucher-amount" type="number" placeholder="Amount">
 
 <button onclick="addVoucher()">Add Voucher</button>
-<button onclick="clearData()">Clear All Data</button>
 </div>
 </div>
 
@@ -126,7 +175,6 @@ measurementId: "G-H8QJGXPWJT"
 };
 
 const app = initializeApp(firebaseConfig);
-
 const db = getFirestore(app);
 
 let projects = [];
@@ -134,9 +182,7 @@ let projects = [];
 window.createProject = async function(){
 
 const projectName = document.getElementById("project-name").value;
-
 const bankName = document.getElementById("bank-name").value;
-
 const openingBalance = Number(document.getElementById("opening-balance").value);
 
 if(!projectName || !bankName) return;
@@ -150,13 +196,16 @@ payments:[],
 adjustments:[]
 });
 
+alert("Project Created Successfully");
+
 loadProjects();
+
 
 document.getElementById("project-name").value = "";
 document.getElementById("bank-name").value = "";
 document.getElementById("opening-balance").value = "";
 
-};
+}
 
 async function loadProjects(){
 
@@ -177,52 +226,14 @@ renderAll();
 
 }
 
-window.deleteProject = async function(id){
-
-if(!confirm("Delete this project?")) return;
-
-await deleteDoc(doc(db,"projects",id));
-
-loadProjects();
-
-};
-
-window.editProject = async function(id){
-
-const project = projects.find(p=>p.id === id);
-
-const newProjectName = prompt("Edit Project Name", project.projectName);
-
-const newBankName = prompt("Edit Bank Name", project.bankName);
-
-const newOpeningBalance = prompt("Edit Opening Balance", project.openingBalance);
-
-if(!newProjectName || !newBankName) return;
-
-await updateDoc(doc(db,"projects",id),{
-projectName:newProjectName,
-bankName:newBankName,
-openingBalance:Number(newOpeningBalance)
-});
-
-loadProjects();
-
-};
-
 window.addVoucher = async function(){
 
 const projectIndex = document.getElementById("voucher-project").value;
-
 const type = document.getElementById("voucher-type").value;
-
 const date = document.getElementById("voucher-date").value;
-
 const narration = document.getElementById("voucher-narration").value || "Voucher Entry";
-
 const chequeNo = document.getElementById("voucher-cheque-no").value;
-
 const chequeDate = document.getElementById("voucher-cheque-date").value;
-
 const amount = Number(document.getElementById("voucher-amount").value);
 
 if(projectIndex === "" || !date || !amount) return;
@@ -230,13 +241,13 @@ if(projectIndex === "" || !date || !amount) return;
 const project = projects[projectIndex];
 
 const voucher = {
-voucherNo: `${type.toUpperCase()}-${Date.now()}`,
+voucherNo:`${type.toUpperCase()}-${Date.now()}`,
 date,
 narration,
 chequeNo,
 chequeDate,
 amount,
-status: type === "payment" ? "Pending" : "Approved"
+status:type === "payment" ? "Pending" : "Approved"
 };
 
 if(type === "receipt"){
@@ -257,9 +268,52 @@ payments:project.payments,
 adjustments:project.adjustments
 });
 
+alert("Voucher Added Successfully");
+
 loadProjects();
 
-};
+
+document.getElementById("voucher-date").value = "";
+document.getElementById("voucher-narration").value = "";
+document.getElementById("voucher-cheque-no").value = "";
+document.getElementById("voucher-cheque-date").value = "";
+document.getElementById("voucher-amount").value = "";
+
+}
+
+window.deleteProject = async function(id){
+
+if(!confirm("Delete this project?")) return;
+
+await deleteDoc(doc(db,"projects",id));
+
+alert("Project Deleted Successfully");
+
+loadProjects();
+
+}
+
+window.editProject = async function(id){
+
+const project = projects.find(p=>p.id === id);
+
+const newProjectName = prompt("Edit Project Name",project.projectName);
+const newBankName = prompt("Edit Bank Name",project.bankName);
+const newOpeningBalance = prompt("Edit Opening Balance",project.openingBalance);
+
+if(!newProjectName || !newBankName) return;
+
+await updateDoc(doc(db,"projects",id),{
+projectName:newProjectName,
+bankName:newBankName,
+openingBalance:Number(newOpeningBalance)
+});
+
+alert("Project Updated Successfully");
+
+loadProjects();
+
+}
 
 function updateProjectDropdown(){
 
@@ -292,7 +346,7 @@ adjustments += project.adjustments.reduce((a,b)=>a + Number(b.amount),0);
 
 const balance = opening + receipts + adjustments - payments;
 
-return {opening, receipts, payments, adjustments, balance};
+return {opening,receipts,payments,adjustments,balance};
 
 }
 
@@ -301,13 +355,14 @@ function renderDashboard(){
 const totals = getTotals();
 
 const items = [
-["Projects", projects.length],
-["Opening Balance", totals.opening],
-["Receipts", totals.receipts],
-["Payments", totals.payments],
-["Adjustments", totals.adjustments],
-["Current Balance", totals.balance]
+["Projects",projects.length],
+["Opening Balance",totals.opening],
+["Receipts",totals.receipts],
+["Payments",totals.payments],
+["Adjustments",totals.adjustments],
+["Current Balance",totals.balance]
 ];
+
 
 document.getElementById("dashboard-summary").innerHTML = items.map(item=>`
 <div class="card">
@@ -323,9 +378,7 @@ function renderProjects(){
 const rows = projects.map((p,index)=>{
 
 const receipts = p.receipts.reduce((a,b)=>a + Number(b.amount),0);
-
 const payments = p.payments.reduce((a,b)=>a + Number(b.amount),0);
-
 const adjustments = p.adjustments.reduce((a,b)=>a + Number(b.amount),0);
 
 const balance = Number(p.openingBalance) + receipts + adjustments - payments;
@@ -346,6 +399,7 @@ return `
 `;
 
 }).join("");
+
 
 document.getElementById("projects-table").innerHTML = `
 <thead>
@@ -375,12 +429,12 @@ let rows = "";
 
 projects.forEach(project=>{
 
-[...project.receipts,...project.payments,...project.adjustments].forEach(v=>{
-
+project.receipts.forEach(v=>{
 rows += `
 <tr>
 <td>${project.projectName}</td>
 <td>${project.bankName}</td>
+<td>Receipt</td>
 <td>${v.voucherNo}</td>
 <td>${v.date}</td>
 <td>${v.narration}</td>
@@ -388,16 +442,47 @@ rows += `
 <td>${v.status}</td>
 </tr>
 `;
+});
 
+project.payments.forEach(v=>{
+rows += `
+<tr>
+<td>${project.projectName}</td>
+<td>${project.bankName}</td>
+<td>Payment</td>
+<td>${v.voucherNo}</td>
+<td>${v.date}</td>
+<td>${v.narration}</td>
+<td>${v.amount.toLocaleString()}</td>
+<td>${v.status}</td>
+</tr>
+`;
+});
+
+project.adjustments.forEach(v=>{
+rows += `
+<tr>
+<td>${project.projectName}</td>
+<td>${project.bankName}</td>
+<td>Adjustment</td>
+<td>${v.voucherNo}</td>
+<td>${v.date}</td>
+<td>${v.narration}</td>
+<td>${v.amount.toLocaleString()}</td>
+<td>${v.status}</td>
+</tr>
+`;
 });
 
 });
+
 
 document.getElementById("voucher-table").innerHTML = `
 <thead>
 <tr>
 <th>Project</th>
 <th>Bank</th>
+<th>Type</th>
 <th>Voucher No</th>
 <th>Date</th>
 <th>Narration</th>
@@ -415,11 +500,8 @@ ${rows}
 function renderAll(){
 
 updateProjectDropdown();
-
 renderDashboard();
-
 renderProjects();
-
 renderVouchers();
 
 }
@@ -427,5 +509,7 @@ renderVouchers();
 loadProjects();
 
 </script>
+
 </body>
 </html>
+
