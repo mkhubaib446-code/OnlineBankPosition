@@ -1,4 +1,8 @@
+# Multi Project Bank Position System
 
+Replace your current `index.html` code with the following complete updated version.
+
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -49,7 +53,7 @@ th{background:#f1f5f9}
 <div class="container">
 
 <div>
-<h1>Bismillah Developers Group Bank Position</h1>
+<h1>Project Bank Position System</h1>
 <p>Manage projects, bank balances and vouchers</p>
 </div>
 
@@ -98,7 +102,6 @@ th{background:#f1f5f9}
 <div class="card">
 <h2>All Vouchers</h2>
 <table id="voucher-table"></table>
-<table id="projects-table"></table>
 </div>
 
 </div>
@@ -268,6 +271,8 @@ return `
 <td>${payments.toLocaleString()}</td>
 <td>${adjustments.toLocaleString()}</td>
 <td>${balance.toLocaleString()}</td>
+<td><button onclick="editProject(${index})">Edit</button></td>
+<td><button onclick="deleteProject(${index})">Delete</button></td>
 </tr>
 `;
 
@@ -285,6 +290,8 @@ document.getElementById("projects-table").innerHTML = `
 <th>Payments</th>
 <th>Adjustments</th>
 <th>Balance</th>
+<th>Edit</th>
+<th>Delete</th>
 </tr>
 </thead>
 <tbody>
@@ -365,6 +372,38 @@ ${rows}
 `;
 }
 
+window.deleteProject = function(index){
+
+if(!confirm("Delete this project?")) return;
+
+projects.splice(index,1);
+
+saveData();
+
+renderAll();
+
+};
+
+window.editProject = function(index){
+
+const project = projects[index];
+
+const newProjectName = prompt("Edit Project Name", project.projectName);
+const newBankName = prompt("Edit Bank Name", project.bankName);
+const newOpeningBalance = prompt("Edit Opening Balance", project.openingBalance);
+
+if(!newProjectName || !newBankName) return;
+
+project.projectName = newProjectName;
+project.bankName = newBankName;
+project.openingBalance = Number(newOpeningBalance);
+
+saveData();
+
+renderAll();
+
+};
+
 function renderAll(){
 updateProjectDropdown();
 renderDashboard();
@@ -380,90 +419,3 @@ renderAll();
 
 </body>
 </html>
-
-<script type="module">
-
-  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
-  
-  import {
-  getFirestore,
-  collection,
-  addDoc,
-  getDocs,
-  } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
-  
-  const firebaseConfig = {
-  apiKey: "AIzaSyDb4VHDQ_3mDqrX1oNIfC7hzK18O6znQLE",
-  authDomain: "bank-application-5c3e1.firebaseapp.com",
-  projectId: "bank-application-5c3e1",
-  storageBucket: "bank-application-5c3e1.firebasestorage.app",
-  messagingSenderId: "540292068600",
-  appId: "1:540292068600:web:8384df0a6fc4b36d12370d",
-  measurementId: "G-H8QJGXPWJT"
-  };
-  
-  const app = initializeApp(firebaseConfig);
-  
-  const db = getFirestore(app);
-  
-  window.createProject = async function(){
-  
-  const projectName = document.getElementById("project-name").value;
-  const bankName = document.getElementById("bank-name").value;
-  const openingBalance = Number(document.getElementById("opening-balance").value);
-  
-  if(!projectName || !bankName) return;
-  
-  await addDoc(collection(db,"projects"),{
-  projectName,
-  bankName,
-  openingBalance,
-  createdAt:new Date()
-  });
-  
-  alert("Project Saved");
-  
-  loadProjects();
-  
-  };
-  
-  window.loadProjects = async function(){
-  
-  const table = document.getElementById("projects-table");
-  
-  const querySnapshot = await getDocs(collection(db,"projects"));
-  
-  let rows = "";
-  
-  querySnapshot.forEach((doc)=>{
-  
-  const data = doc.data();
-  
-  rows += `
-  <tr>
-  <td>${data.projectName}</td>
-  <td>${data.bankName}</td>
-  <td>${Number(data.openingBalance).toLocaleString()}</td>
-  </tr>
-  `;
-  
-  });
-  
-  table.innerHTML = `
-  <thead>
-  <tr>
-  <th>Project</th>
-  <th>Bank</th>
-  <th>Opening Balance</th>
-  </tr>
-  </thead>
-  <tbody>
-  ${rows}
-  </tbody>
-  `;
-  
-  };
-  
-  loadProjects();
-  
-  </script>
