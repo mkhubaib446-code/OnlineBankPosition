@@ -600,26 +600,6 @@ onclick="editProject(${index})">
 Edit
 </button>
 
-window.clearVoucher = async function(index){
-
-const project = projects[index];
-
-if(!project) return;
-
-project.receipts.forEach(v=>{
-
-if(v.clearingStatus === "clearing"){
-v.clearingStatus = "clear";
-}
-
-});
-
-await updateDoc(doc(db,"projects",project.id),{
-receipts:project.receipts
-});
-
-loadProjects();
-};
 
 <button
 class="action-btn delete-btn"
@@ -688,6 +668,28 @@ ${rows}
 `;
 
 }
+window.clearVoucher = async function(index){
+
+const project = projects[index];
+
+if(!project) return;
+
+project.receipts.forEach(v=>{
+
+if(v.clearingStatus === "clearing"){
+v.clearingStatus = "clear";
+}
+
+});
+
+await updateDoc(doc(db,"projects",project.id),{
+receipts:project.receipts
+});
+
+loadProjects();
+};
+
+    
 
 function renderAll(){
 updateProjectDropdown();
