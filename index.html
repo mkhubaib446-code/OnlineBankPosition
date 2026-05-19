@@ -208,13 +208,16 @@ gap:10px;
 <div class="card">
 <h2>Create Voucher</h2>
 <div class="grid">
-<select id="voucher-project"></select>
-
-<select id="voucher-type">
-<option value="receipt">Receipt</option>
-<option value="payment">Payment</option>
-<option value="adjustment">Adjustment</option>
-</select>
+    <select id="voucher-project"></select>
+    <select id="voucher-type" onchange="toggleReceiptStatus()">
+        <option value="receipt">Receipt</option>
+        <option value="payment">Payment</option>
+        <option value="adjustment">Adjustment</option>
+        </select>
+        <select id="receipt-status">
+        <option value="clear">Clear</option>
+        <option value="clearing">Clearing</option>
+        </select>
 
 <input type="date" id="voucher-date">
 <input type="text" id="voucher-narration" placeholder="Narration">
@@ -235,6 +238,17 @@ gap:10px;
 
 <div class="card">
 <h2>Voucher Register</h2>
+<div class="card">
+
+    <h2>Cleared Cheques Summary</h2>
+    
+    <div class="table-wrapper">
+    
+    <table id="cleared-cheques-table"></table>
+    
+    </div>
+    
+    </div>
 <div class="table-wrapper">
 <table id="voucher-table"></table>
 </div>
@@ -293,6 +307,25 @@ loadProjects();
 
 };
 
+window.toggleReceiptStatus = function(){
+
+const voucherType =
+document.getElementById("voucher-type").value;
+
+const receiptStatus =
+document.getElementById("receipt-status");
+
+if(voucherType === "receipt"){
+
+receiptStatus.style.display = "block";
+
+}else{
+
+receiptStatus.style.display = "none";
+
+}
+
+}
 async function loadProjects(){
 
 projects = [];
@@ -306,28 +339,78 @@ projects.push({id:docSnap.id,...docSnap.data()});
 renderAll();
 }
 
+window.toggleReceiptStatus = function(){
+
+const voucherType =
+document.getElementById("voucher-type").value;
+
+const receiptStatus =
+document.getElementById("receipt-status");
+
+if(voucherType === "receipt"){
+
+receiptStatus.style.display = "block";
+
+}else{
+
+receiptStatus.style.display = "none";
+
+}
+
+}
 window.addVoucher = async function(){
 
-const projectIndex = document.getElementById("voucher-project").value;
-const type = document.getElementById("voucher-type").value;
-const date = document.getElementById("voucher-date").value;
-const narration = document.getElementById("voucher-narration").value;
-const chequeNo = document.getElementById("voucher-cheque-no").value;
-const chequeDate = document.getElementById("voucher-cheque-date").value;
-const amount = Number(document.getElementById("voucher-amount").value);
+const projectIndex =
+document.getElementById("voucher-project").value;
+
+const type =
+document.getElementById("voucher-type").value;
+
+const receiptStatus =
+document.getElementById("receipt-status").value;
+
+const date =
+document.getElementById("voucher-date").value;
+
+const narration =
+document.getElementById("voucher-narration").value;
+
+const chequeNo =
+document.getElementById("voucher-cheque-no").value;
+
+const chequeDate =
+document.getElementById("voucher-cheque-date").value;
+
+const amount =
+Number(document.getElementById("voucher-amount").value);
 
 if(projectIndex === "") return;
 
 const project = projects[projectIndex];
 
 const voucher = {
-voucherNo:type.toUpperCase()+"-"+Date.now(),
+
+voucherNo:
+type.toUpperCase()+"-"+Date.now(),
+
 date,
 narration,
 chequeNo,
 chequeDate,
 amount,
-status:"Approved"
+
+status:"Approved",
+
+clearingStatus:
+type === "receipt"
+? receiptStatus
+: "clear",
+
+paymentStatus:
+type === "payment"
+? "pending"
+: ""
+
 };
 
 if(type === "receipt"){
@@ -343,35 +426,11 @@ project.adjustments.push(voucher);
 }
 
 await updateDoc(doc(db,"projects",project.id),{
+
 receipts:project.receipts,
 payments:project.payments,
 adjustments:project.adjustments
-});
 
-loadProjects();
-};
-
-window.deleteProject = async function(id){
-
-if(confirm("Delete this project?")){
-await deleteDoc(doc(db,"projects",id));
-loadProjects();
-}
-
-};
-
-window.editProject = async function(index){
-
-const project = projects[index];
-
-const newName = prompt("Project Name",project.projectName);
-const newBank = prompt("Bank Name",project.bankName);
-const newOpening = prompt("Opening Balance",project.openingBalance);
-
-await updateDoc(doc(db,"projects",project.id),{
-projectName:newName,
-bankName:newBank,
-openingBalance:Number(newOpening)
 });
 
 loadProjects();
@@ -399,31 +458,59 @@ projects.forEach(p=>{
 
 opening += Number(p.openingBalance);
 
-receipts += p.receipts.reduce((a,b)=>a + Number(b.amount),0);
+p.receipts.forEach(v=>{
 
-payments += p.payments.reduce((a,b)=>a + Number(b.amount),0);
+if(v.clearingStatus !== "clearing"){
 
-adjustments += p.adjustments.reduce((a,b)=>a + Number(b.amount),0);
+receipts += Number(v.amount);
+
+}
 
 });
 
-const balance = opening + receipts + adjustments - payments;
+p.payments.forEach(v=>{
+
+if(v.paymentStatus === "cleared"){
+
+payments += Number(v.amount);
+
+}
+
+});
+
+adjustments +=
+p.adjustments.reduce((a,b)=>
+a + Number(b.amount),0);
+
+});
+
+const balance =
+opening + receipts + adjustments - payments;
 
 const items = [
+
 ["Projects",projects.length],
 ["Opening Balance",opening],
 ["Receipts",receipts],
 ["Payments",payments],
 ["Adjustments",adjustments],
 ["Current Balance",balance]
+
 ];
 
+document.getElementById("dashboard-summary").innerHTML =
+items.map(item=>`
 
-document.getElementById("dashboard-summary").innerHTML = items.map(item=>`
 <div class="summary-box">
+
 <div class="title">${item[0]}</div>
-<div class="value">${Number(item[1]).toLocaleString()}</div>
+
+<div class="value">
+${Number(item[1]).toLocaleString()}
 </div>
+
+</div>
+
 `).join("");
 
 }
@@ -432,35 +519,151 @@ function renderProjects(){
 
 const rows = projects.map((p,index)=>{
 
-const receipts = p.receipts.reduce((a,b)=>a + Number(b.amount),0);
-const payments = p.payments.reduce((a,b)=>a + Number(b.amount),0);
-const adjustments = p.adjustments.reduce((a,b)=>a + Number(b.amount),0);
+let receipts = 0;
+let clearing = 0;
+let clearedPayments = 0;
 
-const balance = Number(p.openingBalance) + receipts + adjustments - payments;
+p.receipts.forEach(v=>{
+
+if(v.clearingStatus === "clearing"){
+
+clearing += Number(v.amount);
+
+}else{
+
+receipts += Number(v.amount);
+
+}
+
+});
+
+p.payments.forEach(v=>{
+
+if(v.paymentStatus === "cleared"){
+
+clearedPayments += Number(v.amount);
+
+}
+
+});
+
+const adjustments =
+p.adjustments.reduce((a,b)=>
+a + Number(b.amount),0);
+
+const balance =
+Number(p.openingBalance)
++ receipts
++ adjustments
+- clearedPayments;
 
 return `
 <tr>
+
 <td>${index+1}</td>
+
 <td>${p.projectName}</td>
+
 <td>${p.bankName}</td>
-<td>${Number(p.openingBalance).toLocaleString()}</td>
-<td class="receipt">${receipts.toLocaleString()}</td>
-<td class="payment">${payments.toLocaleString()}</td>
-<td class="adjustment">${adjustments.toLocaleString()}</td>
-<td>${balance.toLocaleString()}</td>
+
 <td>
-<button class="action-btn edit-btn" onclick="editProject(${index})">Edit</button>
-<button class="action-btn delete-btn" onclick="deleteProject('${p.id}')">Delete</button>
+${Number(p.openingBalance).toLocaleString()}
 </td>
+
+<td class="receipt">
+${receipts.toLocaleString()}
+</td>
+
+<td class="payment">
+${clearedPayments.toLocaleString()}
+</td>
+
+<td class="adjustment">
+${adjustments.toLocaleString()}
+</td>
+
+<td style="
+color:#ea580c;
+font-weight:700">
+${clearing.toLocaleString()}
+</td>
+
+<td>
+${balance.toLocaleString()}
+</td>
+
+<td>
+
+<button
+class="action-btn edit-btn"
+onclick="editProject(${index})">
+Edit
+</button>
+
+window.clearVoucher = async function(index){
+
+const project = projects[index];
+
+if(!project) return;
+
+project.receipts.forEach(v=>{
+
+if(v.clearingStatus === "clearing"){
+v.clearingStatus = "clear";
+}
+
+});
+
+await updateDoc(doc(db,"projects",project.id),{
+receipts:project.receipts
+});
+
+loadProjects();
+};
+
+<button
+class="action-btn delete-btn"
+onclick="deleteProject('${p.id}')">
+Delete
+</button>
+
+<button
+style="background:#16a34a"
+class="action-btn"
+onclick="clearVoucher(${index})">
+
+Clear Receipt
+
+</button>
+
+window.clearPayment = async function(projectIndex,voucherIndex){
+
+const project = projects[projectIndex];
+
+if(!project || !project.payments[voucherIndex]) return;
+
+project.payments[voucherIndex].paymentStatus = "cleared";
+
+await updateDoc(doc(db,"projects",project.id),{
+payments:project.payments
+});
+
+loadProjects();
+};
+
+</td>
+
 </tr>
 `;
 
 }).join("");
 
-
 document.getElementById("projects-table").innerHTML = `
+
 <thead>
+
 <tr>
+
 <th>#</th>
 <th>Project</th>
 <th>Bank</th>
@@ -468,79 +671,20 @@ document.getElementById("projects-table").innerHTML = `
 <th>Receipts</th>
 <th>Payments</th>
 <th>Adjustments</th>
+<th>Clearing</th>
 <th>Balance</th>
 <th>Actions</th>
+
 </tr>
+
 </thead>
-<tbody>${rows}</tbody>
-`;
 
-}
+<tbody>
 
-function renderVouchers(){
+${rows}
 
-let rows = "";
+</tbody>
 
-projects.forEach(project=>{
-
-project.receipts.forEach(v=>{
-rows += `
-<tr>
-<td>${project.projectName}</td>
-<td>${project.bankName}</td>
-<td class="receipt">Receipt</td>
-<td>${v.voucherNo}</td>
-<td>${v.date}</td>
-<td>${v.narration}</td>
-<td>${v.amount.toLocaleString()}</td>
-</tr>
-`;
-});
-
-project.payments.forEach(v=>{
-rows += `
-<tr>
-<td>${project.projectName}</td>
-<td>${project.bankName}</td>
-<td class="payment">Payment</td>
-<td>${v.voucherNo}</td>
-<td>${v.date}</td>
-<td>${v.narration}</td>
-<td>${v.amount.toLocaleString()}</td>
-</tr>
-`;
-});
-
-project.adjustments.forEach(v=>{
-rows += `
-<tr>
-<td>${project.projectName}</td>
-<td>${project.bankName}</td>
-<td class="adjustment">Adjustment</td>
-<td>${v.voucherNo}</td>
-<td>${v.date}</td>
-<td>${v.narration}</td>
-<td>${v.amount.toLocaleString()}</td>
-</tr>
-`;
-});
-
-});
-
-
-document.getElementById("voucher-table").innerHTML = `
-<thead>
-<tr>
-<th>Project</th>
-<th>Bank</th>
-<th>Type</th>
-<th>Voucher No</th>
-<th>Date</th>
-<th>Narration</th>
-<th>Amount</th>
-</tr>
-</thead>
-<tbody>${rows}</tbody>
 `;
 
 }
@@ -550,6 +694,210 @@ updateProjectDropdown();
 renderDashboard();
 renderProjects();
 renderVouchers();
+renderClearedCheques();
+}
+
+function renderVouchers(){
+
+let rows = "";
+
+projects.forEach((project,projectIndex)=>{
+
+project.receipts.forEach(v=>{
+
+rows += `
+<tr>
+
+<td>${project.projectName}</td>
+
+<td>${project.bankName}</td>
+
+<td class="receipt">Receipt</td>
+
+<td>${v.voucherNo}</td>
+
+<td>${v.date}</td>
+
+<td>${v.narration}</td>
+
+<td>${v.amount.toLocaleString()}</td>
+
+<td>${v.clearingStatus}</td>
+
+<td>-</td>
+
+</tr>
+`;
+
+});
+
+function renderClearedCheques(){
+
+let rows = "";
+
+projects.forEach(project=>{
+
+project.payments.forEach(v=>{
+
+if(v.paymentStatus === "cleared"){
+
+rows += `
+<tr>
+
+<td>${project.projectName}</td>
+
+<td>${project.bankName}</td>
+
+<td>${v.voucherNo}</td>
+
+<td>${v.date}</td>
+
+<td>${v.chequeNo}</td>
+
+<td>${v.amount.toLocaleString()}</td>
+
+</tr>
+`;
+
+}
+
+});
+
+});
+
+document.getElementById("cleared-cheques-table").innerHTML = `
+
+<thead>
+
+<tr>
+
+<th>Project</th>
+<th>Bank</th>
+<th>Voucher No</th>
+<th>Date</th>
+<th>Cheque No</th>
+<th>Amount</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+${rows}
+
+</tbody>
+
+`;
+
+}
+project.payments.forEach((v,vIndex)=>{
+
+rows += `
+<tr>
+
+<td>${project.projectName}</td>
+
+<td>${project.bankName}</td>
+
+<td class="payment">Payment</td>
+
+<td>${v.voucherNo}</td>
+
+<td>${v.date}</td>
+
+<td>${v.narration}</td>
+
+<td>${v.amount.toLocaleString()}</td>
+
+<td>${v.paymentStatus || "pending"}</td>
+
+<td>
+
+${
+(v.paymentStatus !== "cleared")
+
+?
+
+`<button
+style="background:#16a34a"
+onclick="clearPayment(${projectIndex},${vIndex})">
+
+Clear
+
+</button>`
+
+:
+
+"Cleared"
+
+}
+
+</td>
+
+</tr>
+`;
+
+});
+
+project.adjustments.forEach(v=>{
+
+rows += `
+<tr>
+
+<td>${project.projectName}</td>
+
+<td>${project.bankName}</td>
+
+<td class="adjustment">Adjustment</td>
+
+<td>${v.voucherNo}</td>
+
+<td>${v.date}</td>
+
+<td>${v.narration}</td>
+
+<td>${v.amount.toLocaleString()}</td>
+
+<td>-</td>
+
+<td>-</td>
+
+</tr>
+`;
+
+});
+
+});
+
+document.getElementById("voucher-table").innerHTML = `
+
+<thead>
+
+<tr>
+
+<th>Project</th>
+<th>Bank</th>
+<th>Type</th>
+<th>Voucher No</th>
+<th>Date</th>
+<th>Narration</th>
+<th>Amount</th>
+<th>Status</th>
+<th>Action</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+${rows}
+
+</tbody>
+
+`;
+
 }
 
 const today = new Date();
