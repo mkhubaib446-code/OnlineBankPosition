@@ -4,25 +4,48 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bismillah Group Bank Position</title>
+<title>Bismillah Developers - Bank Position</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
 <style>
 *{
 margin:0;
 padding:0;
 box-sizing:border-box;
+font-family:'Poppins',sans-serif;
 }
 
 body{
-font-family:Arial,sans-serif;
-background:#f8fafc;
+background:#eef2f7;
 color:#0f172a;
+padding:20px;
+}
+
+.header{
+background:linear-gradient(135deg,#0f172a,#1e293b);
+color:white;
+padding:25px;
+border-radius:18px;
+display:flex;
+justify-content:space-between;
+align-items:center;
+margin-bottom:20px;
+box-shadow:0 6px 20px rgba(0,0,0,.12);
+}
+
+.header h1{
+font-size:32px;
+font-weight:700;
+}
+
+.header p{
+margin-top:5px;
+color:#cbd5e1;
 }
 
 .container{
-max-width:1400px;
-margin:auto;
-padding:20px;
 display:grid;
 gap:20px;
 }
@@ -30,21 +53,45 @@ gap:20px;
 .card{
 background:white;
 padding:20px;
-border-radius:16px;
+border-radius:18px;
 box-shadow:0 4px 12px rgba(0,0,0,.08);
+}
+
+.card h2{
+margin-bottom:15px;
+font-size:22px;
 }
 
 .grid{
 display:grid;
 grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-gap:14px;
+gap:15px;
+}
+
+.summary-box{
+background:linear-gradient(135deg,#ffffff,#f8fafc);
+padding:20px;
+border-radius:16px;
+border:1px solid #e2e8f0;
+}
+
+.summary-box .title{
+font-size:14px;
+color:#64748b;
+margin-bottom:8px;
+}
+
+.summary-box .value{
+font-size:28px;
+font-weight:700;
+color:#0f172a;
 }
 
 input,select,button{
 width:100%;
 padding:12px;
+border-radius:12px;
 border:1px solid #cbd5e1;
-border-radius:10px;
 font-size:14px;
 }
 
@@ -53,60 +100,102 @@ background:#0f172a;
 color:white;
 border:none;
 cursor:pointer;
+font-weight:600;
+transition:.3s;
 }
 
 button:hover{
-opacity:.9;
+background:#1e293b;
+transform:translateY(-1px);
+}
+
+.table-wrapper{
+overflow:auto;
 }
 
 table{
 width:100%;
 border-collapse:collapse;
-margin-top:10px;
-}
-
-th,td{
-padding:12px;
-border-bottom:1px solid #e2e8f0;
-text-align:left;
-font-size:14px;
+min-width:1200px;
 }
 
 th{
-background:#f1f5f9;
-}
-
-.metric{
-font-size:24px;
-font-weight:bold;
-}
-
-.label{
+background:#0f172a;
+color:white;
+padding:14px;
 font-size:13px;
-color:#64748b;
+text-align:left;
 }
 
-h1,h2{
-margin-bottom:10px;
+td{
+padding:12px;
+border-bottom:1px solid #e2e8f0;
+font-size:13px;
+}
+
+tr:hover{
+background:#f8fafc;
+}
+
+.action-btn{
+padding:7px 10px;
+font-size:12px;
+margin-right:5px;
+width:auto;
+}
+
+.edit-btn{
+background:#2563eb;
+}
+
+.delete-btn{
+background:#dc2626;
+}
+
+.receipt{
+color:#15803d;
+font-weight:600;
+}
+
+.payment{
+color:#dc2626;
+font-weight:600;
+}
+
+.adjustment{
+color:#7c3aed;
+font-weight:600;
+}
+
+@media(max-width:768px){
+.header{
+flex-direction:column;
+align-items:flex-start;
+gap:10px;
+}
 }
 </style>
 </head>
 <body>
 
-<div class="container">
-
+<div class="header">
 <div>
-<h1>Bismillah Group Bank Position</h1>
-<p>Firebase Cloud Based Bank Position Management System</p>
+<h1>Bismillah Developers</h1>
+<p>Advanced Group Bank Position Dashboard</p>
 </div>
+<div>
+<h2 id="today-date"></h2>
+</div>
+</div>
+
+<div class="container">
 
 <div class="card">
 <h2>Create Project</h2>
-
 <div class="grid">
-<input id="project-name" placeholder="Project Name">
-<input id="bank-name" placeholder="Bank Name">
-<input id="opening-balance" type="number" placeholder="Opening Balance">
+<input type="text" id="project-name" placeholder="Project Name">
+<input type="text" id="bank-name" placeholder="Bank Name">
+<input type="number" id="opening-balance" placeholder="Opening Balance">
 <button onclick="createProject()">Create Project</button>
 </div>
 </div>
@@ -117,35 +206,38 @@ margin-bottom:10px;
 </div>
 
 <div class="card">
-<h2>Projects Bank Position</h2>
-<table id="projects-table"></table>
-</div>
-
-<div class="card">
 <h2>Create Voucher</h2>
-
 <div class="grid">
 <select id="voucher-project"></select>
 
 <select id="voucher-type">
-<option value="receipt">Receipt Voucher</option>
-<option value="payment">Payment Voucher</option>
-<option value="adjustment">Adjustment Voucher</option>
+<option value="receipt">Receipt</option>
+<option value="payment">Payment</option>
+<option value="adjustment">Adjustment</option>
 </select>
 
-<input id="voucher-date" type="date">
-<input id="voucher-narration" placeholder="Narration">
-<input id="voucher-cheque-no" placeholder="Cheque No">
-<input id="voucher-cheque-date" type="date">
-<input id="voucher-amount" type="number" placeholder="Amount">
+<input type="date" id="voucher-date">
+<input type="text" id="voucher-narration" placeholder="Narration">
+<input type="text" id="voucher-cheque-no" placeholder="Cheque No">
+<input type="date" id="voucher-cheque-date">
+<input type="number" id="voucher-amount" placeholder="Amount">
 
 <button onclick="addVoucher()">Add Voucher</button>
 </div>
 </div>
 
 <div class="card">
-<h2>All Vouchers</h2>
+<h2>Group Bank Position Summary</h2>
+<div class="table-wrapper">
+<table id="projects-table"></table>
+</div>
+</div>
+
+<div class="card">
+<h2>Voucher Register</h2>
+<div class="table-wrapper">
 <table id="voucher-table"></table>
+</div>
 </div>
 
 </div>
@@ -153,25 +245,23 @@ margin-bottom:10px;
 <script type="module">
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
-
 import {
 getFirestore,
 collection,
 addDoc,
 getDocs,
-deleteDoc,
+doc,
 updateDoc,
-doc
+deleteDoc
 } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-firestore.js";
 
 const firebaseConfig = {
-apiKey: "AIzaSyDb4VHDQ_3mDqrX1oNIfC7hzK18O6znQLE",
-authDomain: "bank-application-5c3e1.firebaseapp.com",
-projectId: "bank-application-5c3e1",
-storageBucket: "bank-application-5c3e1.firebasestorage.app",
-messagingSenderId: "540292068600",
-appId: "1:540292068600:web:8384df0a6fc4b36d12370d",
-measurementId: "G-H8QJGXPWJT"
+apiKey: "YOUR_API_KEY",
+authDomain: "YOUR_AUTH_DOMAIN",
+projectId: "YOUR_PROJECT_ID",
+storageBucket: "YOUR_STORAGE_BUCKET",
+messagingSenderId: "YOUR_SENDER_ID",
+appId: "YOUR_APP_ID"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -187,25 +277,20 @@ const openingBalance = Number(document.getElementById("opening-balance").value);
 
 if(!projectName || !bankName) return;
 
-await addDoc(collection(db,"projects"),{
+const project = {
 projectName,
 bankName,
 openingBalance,
 receipts:[],
 payments:[],
 adjustments:[]
-});
+};
 
-alert("Project Created Successfully");
+await addDoc(collection(db,"projects"),project);
 
 loadProjects();
 
-
-document.getElementById("project-name").value = "";
-document.getElementById("bank-name").value = "";
-document.getElementById("opening-balance").value = "";
-
-}
+};
 
 async function loadProjects(){
 
@@ -213,17 +298,11 @@ projects = [];
 
 const querySnapshot = await getDocs(collection(db,"projects"));
 
-querySnapshot.forEach((projectDoc)=>{
-
-projects.push({
-id:projectDoc.id,
-...projectDoc.data()
-});
-
+querySnapshot.forEach((docSnap)=>{
+projects.push({id:docSnap.id,...docSnap.data()});
 });
 
 renderAll();
-
 }
 
 window.addVoucher = async function(){
@@ -231,23 +310,23 @@ window.addVoucher = async function(){
 const projectIndex = document.getElementById("voucher-project").value;
 const type = document.getElementById("voucher-type").value;
 const date = document.getElementById("voucher-date").value;
-const narration = document.getElementById("voucher-narration").value || "Voucher Entry";
+const narration = document.getElementById("voucher-narration").value;
 const chequeNo = document.getElementById("voucher-cheque-no").value;
 const chequeDate = document.getElementById("voucher-cheque-date").value;
 const amount = Number(document.getElementById("voucher-amount").value);
 
-if(projectIndex === "" || !date || !amount) return;
+if(projectIndex === "") return;
 
 const project = projects[projectIndex];
 
 const voucher = {
-voucherNo:`${type.toUpperCase()}-${Date.now()}`,
+voucherNo:type.toUpperCase()+"-"+Date.now(),
 date,
 narration,
 chequeNo,
 chequeDate,
 amount,
-status:type === "payment" ? "Pending" : "Approved"
+status:"Approved"
 };
 
 if(type === "receipt"){
@@ -268,106 +347,81 @@ payments:project.payments,
 adjustments:project.adjustments
 });
 
-alert("Voucher Added Successfully");
-
 loadProjects();
-
-
-document.getElementById("voucher-date").value = "";
-document.getElementById("voucher-narration").value = "";
-document.getElementById("voucher-cheque-no").value = "";
-document.getElementById("voucher-cheque-date").value = "";
-document.getElementById("voucher-amount").value = "";
-
-}
+};
 
 window.deleteProject = async function(id){
 
-if(!confirm("Delete this project?")) return;
-
+if(confirm("Delete this project?")){
 await deleteDoc(doc(db,"projects",id));
-
-alert("Project Deleted Successfully");
-
 loadProjects();
-
 }
 
-window.editProject = async function(id){
+};
 
-const project = projects.find(p=>p.id === id);
+window.editProject = async function(index){
 
-const newProjectName = prompt("Edit Project Name",project.projectName);
-const newBankName = prompt("Edit Bank Name",project.bankName);
-const newOpeningBalance = prompt("Edit Opening Balance",project.openingBalance);
+const project = projects[index];
 
-if(!newProjectName || !newBankName) return;
+const newName = prompt("Project Name",project.projectName);
+const newBank = prompt("Bank Name",project.bankName);
+const newOpening = prompt("Opening Balance",project.openingBalance);
 
-await updateDoc(doc(db,"projects",id),{
-projectName:newProjectName,
-bankName:newBankName,
-openingBalance:Number(newOpeningBalance)
+await updateDoc(doc(db,"projects",project.id),{
+projectName:newName,
+bankName:newBank,
+openingBalance:Number(newOpening)
 });
 
-alert("Project Updated Successfully");
-
 loadProjects();
 
-}
+};
 
 function updateProjectDropdown(){
 
 const select = document.getElementById("voucher-project");
 
-select.innerHTML = projects.map((p,i)=>
-`<option value="${i}">${p.projectName} - ${p.bankName}</option>`
-).join("");
+select.innerHTML = projects.map((p,index)=>`
+<option value="${index}">${p.projectName} - ${p.bankName}</option>
+`).join("");
 
 }
 
-function getTotals(){
+function renderDashboard(){
 
 let opening = 0;
 let receipts = 0;
 let payments = 0;
 let adjustments = 0;
 
-projects.forEach(project=>{
+projects.forEach(p=>{
 
-opening += Number(project.openingBalance);
+opening += Number(p.openingBalance);
 
-receipts += project.receipts.reduce((a,b)=>a + Number(b.amount),0);
+receipts += p.receipts.reduce((a,b)=>a + Number(b.amount),0);
 
-payments += project.payments.reduce((a,b)=>a + Number(b.amount),0);
+payments += p.payments.reduce((a,b)=>a + Number(b.amount),0);
 
-adjustments += project.adjustments.reduce((a,b)=>a + Number(b.amount),0);
+adjustments += p.adjustments.reduce((a,b)=>a + Number(b.amount),0);
 
 });
 
 const balance = opening + receipts + adjustments - payments;
 
-return {opening,receipts,payments,adjustments,balance};
-
-}
-
-function renderDashboard(){
-
-const totals = getTotals();
-
 const items = [
 ["Projects",projects.length],
-["Opening Balance",totals.opening],
-["Receipts",totals.receipts],
-["Payments",totals.payments],
-["Adjustments",totals.adjustments],
-["Current Balance",totals.balance]
+["Opening Balance",opening],
+["Receipts",receipts],
+["Payments",payments],
+["Adjustments",adjustments],
+["Current Balance",balance]
 ];
 
 
 document.getElementById("dashboard-summary").innerHTML = items.map(item=>`
-<div class="card">
-<div class="label">${item[0]}</div>
-<div class="metric">${Number(item[1]).toLocaleString()}</div>
+<div class="summary-box">
+<div class="title">${item[0]}</div>
+<div class="value">${Number(item[1]).toLocaleString()}</div>
 </div>
 `).join("");
 
@@ -385,16 +439,18 @@ const balance = Number(p.openingBalance) + receipts + adjustments - payments;
 
 return `
 <tr>
-<td>${index + 1}</td>
+<td>${index+1}</td>
 <td>${p.projectName}</td>
 <td>${p.bankName}</td>
 <td>${Number(p.openingBalance).toLocaleString()}</td>
-<td>${receipts.toLocaleString()}</td>
-<td>${payments.toLocaleString()}</td>
-<td>${adjustments.toLocaleString()}</td>
+<td class="receipt">${receipts.toLocaleString()}</td>
+<td class="payment">${payments.toLocaleString()}</td>
+<td class="adjustment">${adjustments.toLocaleString()}</td>
 <td>${balance.toLocaleString()}</td>
-<td><button onclick="editProject('${p.id}')">Edit</button></td>
-<td><button onclick="deleteProject('${p.id}')">Delete</button></td>
+<td>
+<button class="action-btn edit-btn" onclick="editProject(${index})">Edit</button>
+<button class="action-btn delete-btn" onclick="deleteProject('${p.id}')">Delete</button>
+</td>
 </tr>
 `;
 
@@ -412,13 +468,10 @@ document.getElementById("projects-table").innerHTML = `
 <th>Payments</th>
 <th>Adjustments</th>
 <th>Balance</th>
-<th>Edit</th>
-<th>Delete</th>
+<th>Actions</th>
 </tr>
 </thead>
-<tbody>
-${rows}
-</tbody>
+<tbody>${rows}</tbody>
 `;
 
 }
@@ -434,12 +487,11 @@ rows += `
 <tr>
 <td>${project.projectName}</td>
 <td>${project.bankName}</td>
-<td>Receipt</td>
+<td class="receipt">Receipt</td>
 <td>${v.voucherNo}</td>
 <td>${v.date}</td>
 <td>${v.narration}</td>
 <td>${v.amount.toLocaleString()}</td>
-<td>${v.status}</td>
 </tr>
 `;
 });
@@ -449,12 +501,11 @@ rows += `
 <tr>
 <td>${project.projectName}</td>
 <td>${project.bankName}</td>
-<td>Payment</td>
+<td class="payment">Payment</td>
 <td>${v.voucherNo}</td>
 <td>${v.date}</td>
 <td>${v.narration}</td>
 <td>${v.amount.toLocaleString()}</td>
-<td>${v.status}</td>
 </tr>
 `;
 });
@@ -464,12 +515,11 @@ rows += `
 <tr>
 <td>${project.projectName}</td>
 <td>${project.bankName}</td>
-<td>Adjustment</td>
+<td class="adjustment">Adjustment</td>
 <td>${v.voucherNo}</td>
 <td>${v.date}</td>
 <td>${v.narration}</td>
 <td>${v.amount.toLocaleString()}</td>
-<td>${v.status}</td>
 </tr>
 `;
 });
@@ -487,24 +537,22 @@ document.getElementById("voucher-table").innerHTML = `
 <th>Date</th>
 <th>Narration</th>
 <th>Amount</th>
-<th>Status</th>
 </tr>
 </thead>
-<tbody>
-${rows}
-</tbody>
+<tbody>${rows}</tbody>
 `;
 
 }
 
 function renderAll(){
-
 updateProjectDropdown();
 renderDashboard();
 renderProjects();
 renderVouchers();
-
 }
+
+const today = new Date();
+document.getElementById("today-date").innerText = today.toLocaleDateString();
 
 loadProjects();
 
@@ -512,4 +560,3 @@ loadProjects();
 
 </body>
 </html>
-
