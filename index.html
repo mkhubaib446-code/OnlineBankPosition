@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bismillah Developers - Bank Position</title>
+<title>Banking System - Bank Position</title>
 
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
@@ -180,7 +180,7 @@ gap:10px;
 
 <div class="header">
 <div>
-<h1>Bismillah Developers</h1>
+<h1>Banking System</h1>
 <p>Advanced Group Bank Position Dashboard</p>
 </div>
 <div>
@@ -206,25 +206,43 @@ gap:10px;
 </div>
 
 <div class="card">
-<h2>Create Voucher</h2>
-<div class="grid">
-<select id="voucher-project"></select>
-
-<select id="voucher-type">
-<option value="receipt">Receipt</option>
-<option value="payment">Payment</option>
-<option value="adjustment">Adjustment</option>
-</select>
-
-<input type="date" id="voucher-date">
-<input type="text" id="voucher-narration" placeholder="Narration">
-<input type="text" id="voucher-cheque-no" placeholder="Cheque No">
-<input type="date" id="voucher-cheque-date">
-<input type="number" id="voucher-amount" placeholder="Amount">
-
-<button onclick="addVoucher()">Add Voucher</button>
-</div>
-</div>
+    <h2>Create Voucher</h2>
+    
+    <div class="grid">
+    
+    <!-- PROJECT -->
+    <select id="voucher-project"></select>
+    
+    <!-- VOUCHER TYPE -->
+    <select id="voucher-type">
+    <option value="receipt">Receipt</option>
+    <option value="payment">Payment</option>
+    <option value="adjustment">Adjustment</option>
+    </select>
+    
+    <!-- RECEIPT MODE -->
+    <select id="receipt-mode">
+    <option value="online">Online</option>
+    <option value="cash">Cash</option>
+    <option value="clearing">Clearing</option>
+    </select>
+    
+    <!-- PAYMENT MODE -->
+    <select id="payment-mode">
+    <option value="instant">Instant Payment</option>
+    <option value="pdc">Post Dated Cheque</option>
+    </select>
+    
+    <input type="date" id="voucher-date">
+    <input type="text" id="voucher-narration" placeholder="Narration">
+    <input type="text" id="voucher-cheque-no" placeholder="Cheque No">
+    <input type="date" id="voucher-cheque-date">
+    <input type="number" id="voucher-amount" placeholder="Amount">
+    
+    <button onclick="addVoucher()">Add Voucher</button>
+    
+    </div>
+    </div>
 
 <div class="card">
 <h2>Group Bank Position Summary</h2>
@@ -234,11 +252,35 @@ gap:10px;
 </div>
 
 <div class="card">
-<h2>Voucher Register</h2>
-<div class="table-wrapper">
-<table id="voucher-table"></table>
-</div>
-</div>
+    <h2>Bank Receipt Voucher Register</h2>
+    <div class="table-wrapper">
+    <table id="receipt-table"></table>
+    </div>
+    </div>
+    
+    <div class="card">
+    <h2>Bank Payment Voucher Register</h2>
+    
+    <div class="table-wrapper">
+    <table id="payment-table"></table>
+    </div>
+    </div>
+    
+    <div class="card">
+        <h2>Payments Clear Today</h2>
+        
+        <div class="table-wrapper">
+        <table id="cleared-payment-table"></table>
+        </div>
+        
+        </div>
+
+    <div class="card">
+    <h2>Adjustment Voucher Register</h2>
+    <div class="table-wrapper">
+    <table id="adjustment-table"></table>
+    </div>
+    </div>
 
 </div>
 
@@ -284,7 +326,9 @@ bankName,
 openingBalance,
 receipts:[],
 payments:[],
-adjustments:[]
+adjustments:[],
+clearedPayments:[]
+
 };
 
 await addDoc(collection(db,"projects"),project);
@@ -306,6 +350,8 @@ projects.push({id:docSnap.id,...docSnap.data()});
 renderAll();
 }
 
+let editingVoucher = null;
+
 window.addVoucher = async function(){
 
 const projectIndex = document.getElementById("voucher-project").value;
@@ -315,11 +361,50 @@ const narration = document.getElementById("voucher-narration").value;
 const chequeNo = document.getElementById("voucher-cheque-no").value;
 const chequeDate = document.getElementById("voucher-cheque-date").value;
 const amount = Number(document.getElementById("voucher-amount").value);
-
+const receiptMode = document.getElementById("receipt-mode").value;
+const paymentMode = document.getElementById("payment-mode").value;
 if(projectIndex === "") return;
 
 const project = projects[projectIndex];
 
+
+// EDIT EXISTING VOUCHER
+if(editingVoucher){
+
+const oldProject = projects[editingVoucher.projectIndex];
+
+const updatedVoucher = {
+...editingVoucher.oldVoucher,
+date,
+narration,
+chequeNo,
+chequeDate,
+amount
+};
+
+if(editingVoucher.type === "receipt"){
+oldProject.receipts[editingVoucher.voucherIndex] = updatedVoucher;
+}
+
+if(editingVoucher.type === "payment"){
+oldProject.payments[editingVoucher.voucherIndex] = updatedVoucher;
+}
+
+if(editingVoucher.type === "adjustment"){
+oldProject.adjustments[editingVoucher.voucherIndex] = updatedVoucher;
+}
+
+await updateDoc(doc(db,"projects",oldProject.id),{
+receipts:oldProject.receipts,
+payments:oldProject.payments,
+adjustments:oldProject.adjustments
+});
+
+editingVoucher = null;
+
+}else{
+
+// NEW VOUCHER
 const voucher = {
 voucherNo:type.toUpperCase()+"-"+Date.now(),
 date,
@@ -327,6 +412,10 @@ narration,
 chequeNo,
 chequeDate,
 amount,
+receiptMode,
+cleared: receiptMode !== "clearing",
+paymentMode,
+clearedPayment: paymentMode !== "pdc",
 status:"Approved"
 };
 
@@ -348,8 +437,141 @@ payments:project.payments,
 adjustments:project.adjustments
 });
 
+}
+
+
+// CLEAR FORM
+document.getElementById("voucher-date").value = "";
+document.getElementById("voucher-narration").value = "";
+document.getElementById("voucher-cheque-no").value = "";
+document.getElementById("voucher-cheque-date").value = "";
+document.getElementById("voucher-amount").value = "";
+
 loadProjects();
+
 };
+
+window.editVoucher = function(projectIndex,type,voucherIndex){
+
+const project = projects[projectIndex];
+
+let voucher;
+
+if(type === "receipt"){
+voucher = project.receipts[voucherIndex];
+}
+
+if(type === "payment"){
+voucher = project.payments[voucherIndex];
+}
+
+if(type === "adjustment"){
+voucher = project.adjustments[voucherIndex];
+}
+
+document.getElementById("voucher-project").value = projectIndex;
+document.getElementById("voucher-type").value = type;
+document.getElementById("voucher-date").value = voucher.date;
+document.getElementById("voucher-narration").value = voucher.narration;
+document.getElementById("voucher-cheque-no").value = voucher.chequeNo || "";
+document.getElementById("voucher-cheque-date").value = voucher.chequeDate || "";
+document.getElementById("voucher-amount").value = voucher.amount;
+
+editingVoucher = {
+projectIndex,
+type,
+voucherIndex,
+oldVoucher:voucher
+};
+
+window.scrollTo({
+top:0,
+behavior:"smooth"
+});
+
+};
+
+
+window.deleteVoucher = async function(projectIndex,type,voucherIndex){
+
+const confirmDelete = confirm("Delete this voucher?");
+
+if(!confirmDelete) return;
+
+const project = projects[projectIndex];
+
+if(type === "receipt"){
+project.receipts = project.receipts.filter((_,i)=>i !== voucherIndex);
+}
+
+if(type === "payment"){
+project.payments = project.payments.filter((_,i)=>i !== voucherIndex);
+}
+
+if(type === "adjustment"){
+project.adjustments = project.adjustments.filter((_,i)=>i !== voucherIndex);
+}
+
+await updateDoc(doc(db,"projects",project.id),{
+receipts:project.receipts,
+payments:project.payments,
+adjustments:project.adjustments
+});
+
+loadProjects();
+
+};
+
+// CLEAR RECEIPT
+window.clearVoucher = async function(projectIndex,voucherIndex){
+
+const project = projects[projectIndex];
+
+// MARK RECEIPT AS CLEARED
+project.receipts[voucherIndex].cleared = true;
+
+await updateDoc(doc(db,"projects",project.id),{
+receipts:project.receipts
+});
+
+loadProjects();
+
+};
+
+
+// CLEAR PAYMENT
+window.clearPayment = async function(projectIndex,voucherIndex){
+
+const project = projects[projectIndex];
+
+const payment = project.payments[voucherIndex];
+
+// CREATE ARRAY IF NOT EXISTS
+if(!project.clearedPayments){
+project.clearedPayments = [];
+}
+
+// ADD INTO CLEARED PAYMENTS REGISTER
+project.clearedPayments.push({
+...payment,
+clearedDate:new Date().toLocaleDateString()
+});
+
+// REMOVE FROM PAYMENT REGISTER
+project.payments = project.payments.filter((_,i)=>i !== voucherIndex);
+
+// UPDATE FIREBASE
+await updateDoc(doc(db,"projects",project.id),{
+payments:project.payments,
+clearedPayments:project.clearedPayments
+});
+
+loadProjects();
+
+};
+
+
+
 
 window.deleteProject = async function(id){
 
@@ -399,9 +621,16 @@ projects.forEach(p=>{
 
 opening += Number(p.openingBalance);
 
-receipts += p.receipts.reduce((a,b)=>a + Number(b.amount),0);
+receipts += p.receipts
+.filter(v => v.cleared !== false)
+.reduce((a,b)=>a + Number(b.amount),0);
 
-payments += p.payments.reduce((a,b)=>a + Number(b.amount),0);
+payments += p.payments
+.filter(v => v.clearedPayment !== false)
+.reduce((a,b)=>a + Number(b.amount),0);
+
+payments += (p.clearedPayments || [])
+.reduce((a,b)=>a + Number(b.amount),0);
 
 adjustments += p.adjustments.reduce((a,b)=>a + Number(b.amount),0);
 
@@ -432,8 +661,18 @@ function renderProjects(){
 
 const rows = projects.map((p,index)=>{
 
-const receipts = p.receipts.reduce((a,b)=>a + Number(b.amount),0);
-const payments = p.payments.reduce((a,b)=>a + Number(b.amount),0);
+    const receipts = p.receipts
+.filter(v => v.cleared !== false)
+.reduce((a,b)=>a + Number(b.amount),0);
+const payments =
+p.payments
+.filter(v => v.clearedPayment !== false)
+.reduce((a,b)=>a + Number(b.amount),0)
+
++
+
+(p.clearedPayments || [])
+.reduce((a,b)=>a + Number(b.amount),0);
 const adjustments = p.adjustments.reduce((a,b)=>a + Number(b.amount),0);
 
 const balance = Number(p.openingBalance) + receipts + adjustments - payments;
@@ -449,8 +688,15 @@ return `
 <td class="adjustment">${adjustments.toLocaleString()}</td>
 <td>${balance.toLocaleString()}</td>
 <td>
-<button class="action-btn edit-btn" onclick="editProject(${index})">Edit</button>
-<button class="action-btn delete-btn" onclick="deleteProject('${p.id}')">Delete</button>
+    <button class="action-btn edit-btn"
+onclick="window.editProject(${index})">
+Edit
+</button>
+
+<button class="action-btn delete-btn"
+onclick="window.deleteProject('${p.id}')">
+Delete
+</button>
 </td>
 </tr>
 `;
@@ -479,68 +725,233 @@ document.getElementById("projects-table").innerHTML = `
 
 function renderVouchers(){
 
-let rows = "";
+let receiptRows = "";
+let paymentRows = "";
+let adjustmentRows = "";
+
+projects.forEach((project,projectIndex)=>{
+
+project.receipts = (project.receipts || []).filter(v=>v);
+project.payments = (project.payments || []).filter(v=>v);
+project.adjustments = (project.adjustments || []).filter(v=>v);
+
+
+// RECEIPTS
+project.receipts.forEach((v,voucherIndex)=>{
+
+receiptRows += `
+<tr>
+<td>${project.projectName}</td>
+<td>${project.bankName}</td>
+<td>${v.voucherNo}</td>
+<td>${v.date}</td>
+<td>${v.narration}</td>
+<td>${v.chequeNo || ""}</td>
+<td>${v.chequeDate || ""}</td>
+<td class="receipt">${Number(v.amount).toLocaleString()}</td>
+
+<td>
+${v.cleared === false ? `
+<button class="action-btn"
+style="background:#15803d"
+onclick="window.clearVoucher(${projectIndex},${voucherIndex})">
+Clear
+</button>
+` : "Cleared"}
+</td>
+
+<td>
+<button class="action-btn edit-btn"
+onclick="window.editVoucher(${projectIndex},'receipt',${voucherIndex})">
+Edit
+</button>
+
+<button class="action-btn delete-btn"
+onclick="window.deleteVoucher(${projectIndex},'receipt',${voucherIndex})">
+Delete
+</button>
+</td>
+</tr>
+
+`;
+let clearedRows = "";
 
 projects.forEach(project=>{
 
-project.receipts.forEach(v=>{
-rows += `
+(project.clearedPayments || []).forEach(v=>{
+
+clearedRows += `
 <tr>
 <td>${project.projectName}</td>
 <td>${project.bankName}</td>
-<td class="receipt">Receipt</td>
 <td>${v.voucherNo}</td>
 <td>${v.date}</td>
 <td>${v.narration}</td>
-<td>${v.amount.toLocaleString()}</td>
+<td>${v.chequeNo || ""}</td>
+<td>${v.chequeDate || ""}</td>
+<td>${v.clearedDate || ""}</td>
+<td class="payment">${Number(v.amount).toLocaleString()}</td>
 </tr>
 `;
-});
 
-project.payments.forEach(v=>{
-rows += `
-<tr>
-<td>${project.projectName}</td>
-<td>${project.bankName}</td>
-<td class="payment">Payment</td>
-<td>${v.voucherNo}</td>
-<td>${v.date}</td>
-<td>${v.narration}</td>
-<td>${v.amount.toLocaleString()}</td>
-</tr>
-`;
-});
-
-project.adjustments.forEach(v=>{
-rows += `
-<tr>
-<td>${project.projectName}</td>
-<td>${project.bankName}</td>
-<td class="adjustment">Adjustment</td>
-<td>${v.voucherNo}</td>
-<td>${v.date}</td>
-<td>${v.narration}</td>
-<td>${v.amount.toLocaleString()}</td>
-</tr>
-`;
 });
 
 });
 
 
-document.getElementById("voucher-table").innerHTML = `
+document.getElementById("cleared-payment-table").innerHTML = `
 <thead>
 <tr>
 <th>Project</th>
 <th>Bank</th>
-<th>Type</th>
 <th>Voucher No</th>
-<th>Date</th>
+<th>Voucher Date</th>
 <th>Narration</th>
+<th>Cheque No</th>
+<th>Cheque Date</th>
+<th>Cleared Date</th>
 <th>Amount</th>
 </tr>
 </thead>
-<tbody>${rows}</tbody>
+
+<tbody>
+${clearedRows}
+</tbody>
+`;
+});
+
+
+// PAYMENTS
+project.payments.forEach((v,voucherIndex)=>{
+
+paymentRows += `
+<tr>
+<td>${project.projectName}</td>
+<td>${project.bankName}</td>
+<td>${v.voucherNo}</td>
+<td>${v.date}</td>
+<td>${v.narration}</td>
+<td>${v.chequeNo || ""}</td>
+<td>${v.chequeDate || ""}</td>
+<td class="payment">${Number(v.amount).toLocaleString()}</td>
+
+<td>
+${v.clearedPayment === false ? `
+<button class="action-btn"
+style="background:#15803d"
+onclick="window.clearPayment(${projectIndex},${voucherIndex})">
+Clear
+</button>
+` : "Instant"}
+</td>
+
+<td>
+<button class="action-btn edit-btn"
+onclick="window.editVoucher(${projectIndex},'payment',${voucherIndex})">
+Edit
+</button>
+
+<button class="action-btn delete-btn"
+onclick="window.deleteVoucher(${projectIndex},'payment',${voucherIndex})">
+Delete
+</button>
+</td>
+</tr>
+`;
+
+});
+
+
+// ADJUSTMENTS
+project.adjustments.forEach((v,voucherIndex)=>{
+
+adjustmentRows += `
+<tr>
+<td>${project.projectName}</td>
+<td>${project.bankName}</td>
+<td>${v.voucherNo}</td>
+<td>${v.date}</td>
+<td>${v.narration}</td>
+<td>${v.chequeNo || ""}</td>
+<td>${v.chequeDate || ""}</td>
+<td class="adjustment">${Number(v.amount).toLocaleString()}</td>
+
+<td>
+<button class="action-btn edit-btn"
+onclick="window.editVoucher(${projectIndex},'adjustment',${voucherIndex})">
+Edit
+</button>
+
+<button class="action-btn delete-btn"
+onclick="window.deleteVoucher(${projectIndex},'adjustment',${voucherIndex})">
+Delete
+</button>
+</td>
+</tr>
+`;
+
+});
+
+});
+
+
+// RECEIPT TABLE
+document.getElementById("receipt-table").innerHTML = `
+<thead>
+<tr>
+<th>Project</th>
+<th>Bank</th>
+<th>Voucher No</th>
+<th>Date</th>
+<th>Narration</th>
+<th>Cheque No</th>
+<th>Cheque Date</th>
+<th>Amount</th>
+<th>Clear Status</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody>${receiptRows}</tbody>
+`;
+
+
+// PAYMENT TABLE
+document.getElementById("payment-table").innerHTML = `
+<thead>
+<tr>
+<th>Project</th>
+<th>Bank</th>
+<th>Voucher No</th>
+<th>Date</th>
+<th>Narration</th>
+<th>Cheque No</th>
+<th>Cheque Date</th>
+<th>Amount</th>
+<th>Clear Status</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody>${paymentRows}</tbody>
+`;
+
+
+// ADJUSTMENT TABLE
+document.getElementById("adjustment-table").innerHTML = `
+<thead>
+<tr>
+<th>Project</th>
+<th>Bank</th>
+<th>Voucher No</th>
+<th>Date</th>
+<th>Narration</th>
+<th>Cheque No</th>
+<th>Cheque Date</th>
+<th>Amount</th>
+<th>Clear Status</th>
+<th>Actions</th>
+</tr>
+</thead>
+<tbody>${adjustmentRows}</tbody>
 `;
 
 }
